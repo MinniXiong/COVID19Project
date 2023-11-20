@@ -1,13 +1,9 @@
 -- Import data into SQL and check if they are correct
 SELECT *
   FROM [PortfolioProject].[dbo].[CovidDeaths]
-  -- Excluding the data where continent is null
+  -- Exclude the data where continent is blank
   WHERE continent <>''
   ORDER BY 3,4
-
---SELECT *
---FROM [PortfolioProject].[dbo].[CovidVaccinations]
---ORDER BY 3,4
 
 -- Select data that I want to analyze, ordered by location and date
 SELECT location,date,total_cases, new_cases, total_deaths, population
@@ -15,44 +11,44 @@ SELECT location,date,total_cases, new_cases, total_deaths, population
   WHERE continent <>''
   ORDER BY 1,2
 
+----------------------------------------------------------------------------------------------------------------------
 -- Total deaths vs total cases and death percentage
 -- Shows likelihood of death if one contracts COVID-19 in Canada
 SELECT location,date,total_cases, total_deaths,
-  -- Convert data type
   (CONVERT(float,total_deaths)/NULLIF(CONVERT(float,total_cases),0))*100 AS Death_Percentage
   FROM [PortfolioProject].[dbo].[CovidDeaths]
-  -- Looking for data in Canada
   WHERE location = 'Canada'
   ORDER BY 1,2
 
+----------------------------------------------------------------------------------------------------------------------
 -- Total cases vs population
 -- Shows the percentage of population contracting COVID-19 in Canada
 SELECT location,date,total_cases, population,
-  -- Convert data type
   (CONVERT(float,total_cases)/NULLIF(CONVERT(float,population),0))*100 AS Infection_Rate
   FROM [PortfolioProject].[dbo].[CovidDeaths]
-  -- Looking for data in Canada
   WHERE location = 'Canada'
   ORDER BY 1,2
 
--- Looking for countries with highest infection count and highest infection rate compared to population
+----------------------------------------------------------------------------------------------------------------------
+-- Look for countries with highest infection count and highest infection rate compared to population
 SELECT location, population, MAX((CONVERT(float,total_cases))) AS Highest_Infection_Count,
-  -- Convert data type
-  MAX((CONVERT(float,total_cases)/NULLIF(CONVERT(float,population),0)))*100 AS Highest_Infection_Rate
+  MAX((CONVERT(float,total_cases)/NULLIF(CONVERT(float,population),0)))*100 AS Population_Infected_Percentage
   FROM [PortfolioProject].[dbo].[CovidDeaths]
   WHERE continent <>''
   Group by location, population
   ORDER BY 4 DESC
   -- Canada is in the 73th place
 
--- Looking for countries with highest death count
+----------------------------------------------------------------------------------------------------------------------
+-- Look for countries with highest death count
 SELECT location, population, MAX((CONVERT(float,total_deaths))) AS Highest_Death_Count
   FROM [PortfolioProject].[dbo].[CovidDeaths]
   WHERE continent <>''
   Group by location, population
   ORDER BY 3 DESC
 
--- Looking for countries with highest death rate compared to population
+----------------------------------------------------------------------------------------------------------------------
+-- Look for countries with highest death rate compared to population
 SELECT location, population, 
   -- Convert data type
   MAX((CONVERT(float,total_deaths)/NULLIF(CONVERT(float,population),0)))*100 AS Highest_Death_Rate
@@ -61,16 +57,16 @@ SELECT location, population,
   Group by location, population
   ORDER BY 3 DESC
 
--- Breaking down death count by continent
-
--- Continents with the highet death rate per population
+----------------------------------------------------------------------------------------------------------------------
+-- Break down death count by continent and look for continents with the highet death rate per population
 SELECT continent, MAX((CONVERT(float,total_deaths))) AS Highest_Death_Count
   FROM [PortfolioProject].[dbo].[CovidDeaths]
   WHERE continent <> ''
   Group by continent
   ORDER BY 2 DESC
 
--- Global numbers
+----------------------------------------------------------------------------------------------------------------------
+-- Global case number and death number by date
 SELECT date,SUM(CONVERT(int,new_cases)) AS Global_Cases, SUM(CONVERT(int,new_deaths)) AS Global_, 
   SUM(CONVERT(float, new_deaths))/NULLIF(SUM(CONVERT(float, new_cases)),0)*100 AS Global_Death_Percentage
   FROM [PortfolioProject].[dbo].[CovidDeaths]
@@ -78,13 +74,16 @@ SELECT date,SUM(CONVERT(int,new_cases)) AS Global_Cases, SUM(CONVERT(int,new_dea
   GROUP BY date
   ORDER BY 1,2
 
-SELECT SUM(CONVERT(int,new_cases)) AS Global_Cases, SUM(CONVERT(int,new_deaths)) AS Global_, 
+-- Total global case number and death number
+SELECT SUM(CONVERT(int,new_cases)) AS Global_Cases, SUM(CONVERT(int,new_deaths)) AS Global_Deaths, 
   SUM(CONVERT(float, new_deaths))/NULLIF(SUM(CONVERT(float, new_cases)),0)*100 AS Global_Death_Percentage
   FROM [PortfolioProject].[dbo].[CovidDeaths]
   WHERE continent <> ' '
   ORDER BY 1,2
 
+----------------------------------------------------------------------------------------------------------------------
 -- Total population vs vaccinations
+-- Rolling vaccination count per date in 
 SELECT Death.continent, Death.location, Death.date, Death.population, Vac.new_vaccinations,
   SUM(CONVERT(int,Vac.new_vaccinations)) 
   OVER (PARTITION BY Death.location ORDER BY Death.location, Death.date) AS Rolling_Vaccinated_Count
@@ -94,10 +93,10 @@ SELECT Death.continent, Death.location, Death.date, Death.population, Vac.new_va
   and Death.date = Vac.date
   WHERE Death.continent <> ' '
   ORDER BY 2,3
--- Firt day COVID vaccination was exercised in Canada was 2020-12-15 with a number 718
+-- The first COVID vaccine is introduced on 2020-12-15 in Canada, with a number of 718
 
-
--- Use CTE
+----------------------------------------------------------------------------------------------------------------------
+-- Use CTE to create rolling vaccinated rate
 WITH PopvsVac (continent, location, date, population, new_vaccinations, Rolling_Vaccinated_Count)
 AS
 (
@@ -116,7 +115,7 @@ SELECT *,
 FROM PopvsVac
 
 
--- Temp Table
+-- Another way: Temp Table
 DROP TABLE if EXISTS #PercentagePopulationVaccinated
 CREATE TABLE #PercentagePopulationVaccinated
  ( 
@@ -141,7 +140,7 @@ SELECT Death.continent, Death.location, Death.date, Death.population, Vac.new_va
   IIF(CONVERT(float, population)=0, Null,(Rolling_Vaccinated_Count/CONVERT(float, population)) *100) AS Rolling_Vaccinated_Rate
 FROM #PercentagePopulationVaccinated
 
--- Creating view to store data for later visualizations
+-- Create a view to store data for later visualizations
 CREATE VIEW PercentagePopulationVaccinated AS
 SELECT Death.continent, Death.location, Death.date, Death.population, Vac.new_vaccinations,
   SUM(CONVERT(int,Vac.new_vaccinations)) 
@@ -152,7 +151,6 @@ SELECT Death.continent, Death.location, Death.date, Death.population, Vac.new_va
   and Death.date = Vac.date
   WHERE Death.continent <> ' '
   --ORDER BY 2,3
-
 
  SELECT *
  FROM PercentagePopulationVaccinated
