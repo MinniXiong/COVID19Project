@@ -96,7 +96,7 @@ SELECT Death.continent, Death.location, Death.date, Death.population, Vac.new_va
 -- The first COVID vaccine is introduced on 2020-12-15 in Canada, with a number of 718
 
 ----------------------------------------------------------------------------------------------------------------------
--- Use CTE to create rolling vaccinated rate
+-- Use CTE to create rolling vaccinated rate in each location
 WITH PopvsVac (continent, location, date, population, new_vaccinations, Rolling_Vaccinated_Count)
 AS
 (
