@@ -83,7 +83,7 @@ SELECT SUM(CONVERT(int,new_cases)) AS Global_Cases, SUM(CONVERT(int,new_deaths))
 
 ----------------------------------------------------------------------------------------------------------------------
 -- Total population vs vaccinations
--- Rolling vaccination count per date in 
+-- Rolling vaccination count per date in each location
 SELECT Death.continent, Death.location, Death.date, Death.population, Vac.new_vaccinations,
   SUM(CONVERT(int,Vac.new_vaccinations)) 
   OVER (PARTITION BY Death.location ORDER BY Death.location, Death.date) AS Rolling_Vaccinated_Count
